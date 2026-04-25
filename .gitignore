@@ -1,0 +1,40 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dataset (too large for GitHub)
+AGMHS/
+notebooks/AGMHS/
+
+# Model weights (too large)
+models/cvae_weights.pth
+
+# Result images
+results/*.png
+
+# Keep these small files
+!results/metrics.json
+!results/classification_report.txt
+!results/README.txt
+
+# Flask uploads
+webapp/static/uploads/*
+!webapp/static/uploads/.gitkeep
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

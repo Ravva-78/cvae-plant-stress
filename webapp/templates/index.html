@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CVAE Plant Stress Detector</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --bg2: #161616;
+    --bg3: #1e1e1e;
+    --border: #2a2a2a;
+    --text: #e8e8e8;
+    --muted: #888;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --accent: #6366f1;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header { border-bottom: 1px solid var(--border); padding: 18px 32px; display: flex; align-items: center; gap: 14px; }
+  .logo { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; }
+  .logo-text h1 { font-size: 16px; font-weight: 600; }
+  .logo-text p  { font-size: 12px; color: var(--muted); }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); margin-left: auto; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+
+  /* Metric strip */
+  .metrics-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 28px; }
+  .metric-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .metric-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .metric-val   { font-size: 22px; font-weight: 600; }
+  .metric-val.green { color: var(--green); }
+  .metric-val.blue  { color: var(--blue); }
+
+  /* Two-col layout */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+
+  /* Panels */
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
+
+  /* Upload zone */
+  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 36px 20px; text-align: center; cursor: pointer; transition: border-color .2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); }
+  .upload-zone input { display: none; }
+  .upload-zone p { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .upload-zone .icon { font-size: 32px; margin-bottom: 8px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4f52e0; }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--bg3); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Result */
+  .result-box { display: none; }
+  .result-box.show { display: block; }
+  .img-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .img-wrap { text-align: center; }
+  .img-wrap img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .img-wrap p { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  .prediction-banner { border-radius: 8px; padding: 14px 18px; margin-top: 14px; display: flex; align-items: center; gap: 12px; }
+  .prediction-banner.healthy { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); }
+  .prediction-banner.stressed { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); }
+  .pred-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .pred-label { font-size: 16px; font-weight: 700; }
+  .pred-sub   { font-size: 12px; color: var(--muted); }
+
+  /* Error bar */
+  .error-bar-wrap { background: var(--bg3); border-radius: 4px; height: 8px; margin: 8px 0; position: relative; overflow: hidden; }
+  .error-bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+  .error-threshold-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; opacity: .5; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+  .tab-btn { padding: 7px 16px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; transition: all .15s; }
+  .tab-btn.active { background: var(--bg3); color: var(--text); border-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Charts */
+  .chart-wrap { position: relative; height: 240px; }
+
+  /* Generate section */
+  .gen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+  .gen-img-wrap { text-align: center; }
+  .gen-img-wrap img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+  .gen-img-wrap p { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* Results gallery */
+  .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .gallery img { width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+
+  .spinner { display: none; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading .spinner { display: inline-block; }
+  .loading .btn-text { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CV</div>
+  <div class="logo-text">
+    <h1>Plant Stress Detector</h1>
+    <p>Conditional Variational Autoencoder — AGMHS Dataset</p>
+  </div>
+  <span class="badge">CVAE · PyTorch</span>
+</header>
+
+<div class="container">
+
+  <!-- Metrics strip -->
+  <div class="metrics-strip">
+    <div class="metric-card">
+      <div class="metric-label">Accuracy</div>
+      <div class="metric-val green" id="m-acc">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">F1 Score</div>
+      <div class="metric-val green" id="m-f1">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">AUC</div>
+      <div class="metric-val blue" id="m-auc">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Precision</div>
+      <div class="metric-val" id="m-prec">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Recall</div>
+      <div class="metric-val" id="m-rec">—</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('predict')">Predict</button>
+    <button class="tab-btn" onclick="switchTab('generate')">Generate</button>
+    <button class="tab-btn" onclick="switchTab('results')">Training Results</button>
+    <button class="tab-btn" onclick="switchTab('about')">About</button>
+  </div>
+
+  <!-- PREDICT TAB -->
+  <div class="tab-panel active" id="tab-predict">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Upload Plant Image</div>
+        <div class="upload-zone" id="dropzone" onclick="document.getElementById('file-input').click()">
+          <div class="icon">🌿</div>
+          <p>Click or drag & drop a plant image</p>
+          <p>PNG, JPG up to 8 MB</p>
+          <input type="file" id="file-input" accept="image/*">
+        </div>
+        <div style="margin-top:14px; display:flex; gap:8px;">
+          <button class="btn btn-primary" id="predict-btn" onclick="runPredict()" disabled>
+            <span class="spinner"></span>
+            <span class="btn-text">Analyse Image</span>
+          </button>
+          <button class="btn btn-outline" onclick="clearResult()">Clear</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Result</div>
+        <div id="result-placeholder" style="color:var(--muted);font-size:13px;padding:20px 0;">
+          Upload an image and click Analyse to see the prediction.
+        </div>
+        <div class="result-box" id="result-box">
+          <div class="prediction-banner" id="pred-banner">
+            <div class="pred-icon" id="pred-icon"></div>
+            <div>
+              <div class="pred-label" id="pred-label">—</div>
+              <div class="pred-sub" id="pred-sub">—</div>
+            </div>
+          </div>
+          <div class="img-compare">
+            <div class="img-wrap">
+              <img id="orig-img" src="" alt="Original">
+              <p>Original</p>
+            </div>
+            <div class="img-wrap">
+              <img id="recon-img" src="" alt="Reconstructed">
+              <p>Reconstructed</p>
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
+              <span>Reconstruction error</span>
+              <span id="err-val">—</span>
+            </div>
+            <div class="error-bar-wrap">
+              <div class="error-bar-fill" id="err-fill" style="width:0%"></div>
+              <div class="error-threshold-line" id="thresh-line"></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);">Threshold: <span id="thresh-val">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE TAB -->
+  <div class="tab-panel" id="tab-generate">
+    <div class="panel">
+      <div class="panel-title">Generate Synthetic Plant Images</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Sample random latent vectors and decode them to generate new plant images conditioned on class.</p>
+      <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="generateImages('Healthy')">Generate Healthy</button>
+        <button class="btn btn-outline" onclick="generateImages('Stressed')">Generate Stressed</button>
+      </div>
+      <div class="gen-grid" id="gen-grid">
+        <div style="color:var(--muted);font-size:13px;grid-column:span 4;">Click a button to generate images.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS TAB -->
+  <div class="tab-panel" id="tab-results">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Training Loss Curve</div>
+        <div class="chart-wrap"><canvas id="loss-chart" role="img" aria-label="Training loss over epochs">Training loss curve.</canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Confusion Matrix</div>
+        <img src="/results/confusion_matrix.png" style="width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="Confusion matrix">
+      </div>
+      <div class="panel">
+        <div class="panel-title">Error Distribution</div>
+        <img src="/results/error_distribution.png" style="width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="Error distribution">
+      </div>
+      <div class="panel">
+        <div class="panel-title">ROC Curve</div>
+        <img src="/results/roc_curve.png" style="width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="ROC curve">
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Latent Space t-SNE</div>
+      <img src="/results/tsne_latent.png" style="max-width:600px;width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="t-SNE visualization">
+    </div>
+  </div>
+
+  <!-- ABOUT TAB -->
+  <div class="tab-panel" id="tab-about">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">How It Works</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.8;">
+          A <strong style="color:var(--text)">Conditional Variational Autoencoder (CVAE)</strong> is trained on healthy and stressed plant images. 
+          The model learns to encode images into a compact latent space (dim=50) conditioned on the class label, then reconstruct them.<br><br>
+          At inference, the reconstruction error (MSE between input and output) acts as an <strong style="color:var(--text)">anomaly score</strong>.
+          Healthy plants are reconstructed with low error. Stressed plants, having learned different latent patterns, produce higher error.
+          A midpoint threshold separates the two classes.
+        </p>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Architecture</div>
+        <table style="width:100%;font-size:13px;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 0;color:var(--muted);">Input dim</td><td style="padding:7px 0;">64 × 64 × 3 = 12,288</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 0;color:var(--muted);">Hidden dim</td><td style="padding:7px 0;">512</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 0;color:var(--muted);">Latent dim</td><td style="padding:7px 0;">50</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 0;color:var(--muted);">Classes</td><td style="padding:7px 0;">Healthy, Stressed</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 0;color:var(--muted);">Loss</td><td style="padding:7px 0;">BCE + KL Divergence</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 0;color:var(--muted);">Optimizer</td><td style="padding:7px 0;">Adam (lr = 1e-4)</td></tr>
+          <tr><td style="padding:7px 0;color:var(--muted);">Epochs</td><td style="padding:7px 0;" id="about-epochs">40</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Load metrics on page load ─────────────────────────────────────────────────
+async function loadMetrics() {
+  try {
+    const r = await fetch('/metrics');
+    const m = await r.json();
+    document.getElementById('m-acc').textContent  = m.accuracy  ? (m.accuracy * 100).toFixed(1) + '%' : '—';
+    document.getElementById('m-f1').textContent   = m.f1_score  ? m.f1_score.toFixed(3)  : '—';
+    document.getElementById('m-auc').textContent  = m.auc       ? m.auc.toFixed(3)        : '—';
+    document.getElementById('m-prec').textContent = m.precision ? m.precision.toFixed(3)  : '—';
+    document.getElementById('m-rec').textContent  = m.recall    ? m.recall.toFixed(3)     : '—';
+    if (m.epochs) document.getElementById('about-epochs').textContent = m.epochs;
+
+    if (m.train_losses && m.train_losses.length) buildLossChart(m.train_losses);
+  } catch(e) { console.warn('Metrics not available:', e); }
+}
+
+function buildLossChart(losses) {
+  const ctx = document.getElementById('loss-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: losses.map((_,i) => i+1),
+      datasets: [{
+        label: 'Training Loss',
+        data: losses,
+        borderColor: '#6366f1',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: true,
+        backgroundColor: 'rgba(99,102,241,0.08)'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { title: { display: true, text: 'Epoch', color: '#888' }, ticks: { color: '#888', maxTicksLimit: 8 }, grid: { color: '#1e1e1e' } },
+        y: { title: { display: true, text: 'Loss', color: '#888' }, ticks: { color: '#888' }, grid: { color: '#222' } }
+      }
+    }
+  });
+}
+
+// ── File upload ───────────────────────────────────────────────────────────────
+const dropzone   = document.getElementById('dropzone');
+const fileInput  = document.getElementById('file-input');
+const predictBtn = document.getElementById('predict-btn');
+let selectedFile = null;
+
+fileInput.addEventListener('change', e => {
+  selectedFile = e.target.files[0];
+  if (selectedFile) {
+    dropzone.querySelector('p').textContent = selectedFile.name;
+    predictBtn.disabled = false;
+  }
+});
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag');
+  selectedFile = e.dataTransfer.files[0];
+  if (selectedFile) { dropzone.querySelector('p').textContent = selectedFile.name; predictBtn.disabled = false; }
+});
+
+// ── Predict ───────────────────────────────────────────────────────────────────
+async function runPredict() {
+  if (!selectedFile) return;
+  const btn = document.getElementById('predict-btn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const form = new FormData();
+  form.append('image', selectedFile);
+
+  try {
+    const res  = await fetch('/predict', { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    showResult(data);
+  } catch(e) {
+    alert('Request failed: ' + e.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function showResult(data) {
+  document.getElementById('result-placeholder').style.display = 'none';
+  const box = document.getElementById('result-box');
+  box.classList.add('show');
+
+  const isHealthy = data.prediction === 'Healthy';
+  const banner = document.getElementById('pred-banner');
+  banner.className = 'prediction-banner ' + (isHealthy ? 'healthy' : 'stressed');
+  document.getElementById('pred-icon').textContent = isHealthy ? '🌿' : '🍂';
+  document.getElementById('pred-label').textContent = data.prediction;
+  document.getElementById('pred-label').style.color = isHealthy ? '#22c55e' : '#ef4444';
+  document.getElementById('pred-sub').textContent = `Confidence: ${data.confidence.toFixed(1)}%`;
+
+  document.getElementById('orig-img').src  = 'data:image/png;base64,' + data.original_b64;
+  document.getElementById('recon-img').src = 'data:image/png;base64,' + data.recon_b64;
+
+  const errVal   = data.error;
+  const threshVal = data.threshold;
+  document.getElementById('err-val').textContent   = errVal.toFixed(6);
+  document.getElementById('thresh-val').textContent = threshVal.toFixed(6);
+
+  const maxErr  = threshVal * 2.5;
+  const pct     = Math.min(errVal / maxErr * 100, 100);
+  const tpct    = Math.min(threshVal / maxErr * 100, 100);
+  const fill    = document.getElementById('err-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = isHealthy ? '#22c55e' : '#ef4444';
+  document.getElementById('thresh-line').style.left = tpct + '%';
+}
+
+function clearResult() {
+  document.getElementById('result-placeholder').style.display = '';
+  document.getElementById('result-box').classList.remove('show');
+  fileInput.value = '';
+  selectedFile = null;
+  predictBtn.disabled = true;
+  dropzone.querySelector('p').textContent = 'Click or drag & drop a plant image';
+}
+
+// ── Generate ───────────────────────────────────────────────────────────────────
+async function generateImages(cls) {
+  const grid = document.getElementById('gen-grid');
+  grid.innerHTML = '<div style="color:var(--muted);font-size:13px;grid-column:span 4;">Generating...</div>';
+
+  const promises = Array.from({length:4}, () =>
+    fetch('/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({class: cls})
+    }).then(r => r.json())
+  );
+
+  try {
+    const results = await Promise.all(promises);
+    grid.innerHTML = '';
+    results.forEach((d, i) => {
+      if (d.image_b64) {
+        const wrap = document.createElement('div');
+        wrap.className = 'gen-img-wrap';
+        wrap.innerHTML = `<img src="data:image/png;base64,${d.image_b64}" alt="Generated ${cls}"><p>${cls} #${i+1}</p>`;
+        grid.appendChild(wrap);
+      }
+    });
+  } catch(e) {
+    grid.innerHTML = '<div style="color:#ef4444;grid-column:span 4;">Generation failed. Is the model loaded?</div>';
+  }
+}
+
+loadMetrics();
+</script>
+</body>
+</html>

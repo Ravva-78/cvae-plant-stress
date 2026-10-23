@@ -64,7 +64,7 @@
   /* Result */
   .result-box { display: none; }
   .result-box.show { display: block; }
-  .img-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .img-compare { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
   .img-wrap { text-align: center; }
   .img-wrap img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
   .img-wrap p { font-size: 11px; color: var(--muted); margin-top: 5px; }
@@ -115,7 +115,12 @@
     <h1>Plant Stress Detector</h1>
     <p>Conditional Variational Autoencoder — AGMHS Dataset</p>
   </div>
-  <span class="badge">CVAE · PyTorch</span>
+  <a href="https://github.com/Ravva-78/cvae-plant-stress" target="_blank" style="text-decoration:none; margin-left:auto;">
+    <span class="badge" style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+      <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Ravva-78/cvae-plant-stress
+    </span>
+  </a>
 </header>
 
 <div class="container">
@@ -159,9 +164,14 @@
         <div class="panel-title">Upload Plant Image</div>
         <div class="upload-zone" id="dropzone" onclick="document.getElementById('file-input').click()">
           <div class="icon">🌿</div>
-          <p>Click or drag & drop a plant image</p>
+          <p>Click or drag &amp; drop a plant image</p>
           <p>PNG, JPG up to 8 MB</p>
           <input type="file" id="file-input" accept="image/*">
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <span style="font-size:11px; color:var(--muted);">Quick Zero-Setup Test:</span>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="loadDemoSample(false)">🌿 Healthy Leaf</button>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="loadDemoSample(true)">🍂 Stressed Leaf</button>
         </div>
         <div style="margin-top:14px; display:flex; gap:8px;">
           <button class="btn btn-primary" id="predict-btn" onclick="runPredict()" disabled>
@@ -175,7 +185,7 @@
       <div class="panel">
         <div class="panel-title">Result</div>
         <div id="result-placeholder" style="color:var(--muted);font-size:13px;padding:20px 0;">
-          Upload an image and click Analyse to see the prediction.
+          Upload an image or click a quick test sample to evaluate reconstruction anomaly.
         </div>
         <div class="result-box" id="result-box">
           <div class="prediction-banner" id="pred-banner">
@@ -188,23 +198,27 @@
           <div class="img-compare">
             <div class="img-wrap">
               <img id="orig-img" src="" alt="Original">
-              <p>Original</p>
+              <p>Original (x)</p>
             </div>
             <div class="img-wrap">
               <img id="recon-img" src="" alt="Reconstructed">
-              <p>Reconstructed</p>
+              <p>CVAE Recon (x̂)</p>
+            </div>
+            <div class="img-wrap">
+              <img id="residual-img" src="" alt="Anomaly Heatmap">
+              <p>Residual |x - x̂|</p>
             </div>
           </div>
           <div style="margin-top:14px;">
             <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
-              <span>Reconstruction error</span>
+              <span>Reconstruction error (MSE)</span>
               <span id="err-val">—</span>
             </div>
             <div class="error-bar-wrap">
               <div class="error-bar-fill" id="err-fill" style="width:0%"></div>
               <div class="error-threshold-line" id="thresh-line"></div>
             </div>
-            <div style="font-size:11px;color:var(--muted);">Threshold: <span id="thresh-val">—</span></div>
+            <div style="font-size:11px;color:var(--muted);">Decision Threshold: <span id="thresh-val">—</span></div>
           </div>
         </div>
       </div>
@@ -245,10 +259,18 @@
         <div class="panel-title">ROC Curve</div>
         <img src="/results/roc_curve.png" style="width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="ROC curve">
       </div>
+      <div class="panel">
+        <div class="panel-title">Latent Space t-SNE</div>
+        <img src="/results/tsne_latent.png" style="width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="t-SNE visualization">
+      </div>
+      <div class="panel">
+        <div class="panel-title">Class-Conditioned Synthetic Sampling</div>
+        <img src="/results/synthetic_images.png" style="width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="Synthetic phenotypes">
+      </div>
     </div>
-    <div class="panel">
-      <div class="panel-title">Latent Space t-SNE</div>
-      <img src="/results/tsne_latent.png" style="max-width:600px;width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="t-SNE visualization">
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-title">Clinical 5-Sample Original vs Reconstruction &amp; Error Residual Heatmap</div>
+      <img src="/results/reconstruction_comparison.png" style="width:100%;border-radius:8px;" onerror="this.style.display='none'" alt="Reconstruction Comparison">
     </div>
   </div>
 
@@ -395,6 +417,10 @@ function showResult(data) {
 
   document.getElementById('orig-img').src  = 'data:image/png;base64,' + data.original_b64;
   document.getElementById('recon-img').src = 'data:image/png;base64,' + data.recon_b64;
+  const resImg = document.getElementById('residual-img');
+  if (resImg) {
+    resImg.src = 'data:image/png;base64,' + (data.residual_b64 || data.recon_b64);
+  }
 
   const errVal   = data.error;
   const threshVal = data.threshold;
@@ -408,6 +434,35 @@ function showResult(data) {
   fill.style.width = pct + '%';
   fill.style.background = isHealthy ? '#22c55e' : '#ef4444';
   document.getElementById('thresh-line').style.left = tpct + '%';
+}
+
+function loadDemoSample(isStressed) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#080d0a';
+  ctx.fillRect(0, 0, 64, 64);
+
+  ctx.fillStyle = isStressed ? '#ca8a04' : '#16a34a';
+  ctx.beginPath();
+  ctx.ellipse(32, 32, 16, 26, isStressed ? 0.15 : 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (isStressed) {
+    ctx.fillStyle = '#78350f';
+    ctx.beginPath();
+    ctx.arc(28, 26, 6, 0, Math.PI * 2);
+    ctx.arc(38, 38, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  canvas.toBlob(blob => {
+    selectedFile = new File([blob], isStressed ? 'demo_stressed_leaf.png' : 'demo_healthy_leaf.png', {type: 'image/png'});
+    document.querySelector('#dropzone p').textContent = selectedFile.name;
+    document.getElementById('predict-btn').disabled = false;
+    runPredict();
+  });
 }
 
 function clearResult() {

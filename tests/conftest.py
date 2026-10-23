@@ -1,11 +1,13 @@
-"""
-Shared pytest fixtures for CVAE test suite.
-"""
+import os
+import sys
 import io
 import pytest
 import torch
 import numpy as np
 from PIL import Image
+
+# Ensure repository root is on sys.path regardless of how pytest is invoked
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.model import CVAE, IMG_SIZE
 from webapp.app import app

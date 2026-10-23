@@ -63,6 +63,7 @@ dev = [
 minversion = "7.0"
 addopts = "-v --strict-markers"
 testpaths = ["tests"]
+pythonpath = ["."]
 python_files = ["test_*.py"]
 
 [tool.coverage.run]

@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#050814" />
+      <stop offset="50%" stop-color="#0b132b" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+    
+    <radialGradient id="glow-green" cx="20%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+    </radialGradient>
+    
+    <radialGradient id="glow-blue" cx="80%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Glass card gradient -->
+    <linearGradient id="glass-card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02" />
+    </linearGradient>
+
+    <linearGradient id="accent-text" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+
+    <!-- Drop Shadows and Filters -->
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="420" fill="url(#bg-grad)" />
+  <rect width="1200" height="420" fill="url(#grid-pattern)" />
+  <circle cx="200" cy="120" r="320" fill="url(#glow-green)" />
+  <circle cx="980" cy="200" r="360" fill="url(#glow-blue)" />
+
+  <!-- Botanical Leaf & Neural Geometry Background Overlay -->
+  <g opacity="0.18" stroke="#34d399" stroke-width="1.2" fill="none">
+    <!-- Leaf Silhouette Wireframe -->
+    <path d="M 1080 180 C 1120 100, 1180 80, 1190 70 C 1180 120, 1140 220, 1080 250 C 1020 280, 960 270, 940 260 C 970 230, 1040 210, 1080 180 Z" stroke-dasharray="4,4" />
+    <path d="M 1080 180 L 940 260" stroke-width="1.5" />
+    <path d="M 1020 205 L 1000 185" />
+    <path d="M 1050 195 L 1060 160" />
+    <path d="M 980 230 L 970 210" />
+  </g>
+
+  <!-- Left Header Section -->
+  <g transform="translate(60, 55)">
+    <!-- Pill Badge -->
+    <rect x="0" y="0" width="280" height="28" rx="14" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-opacity="0.4" stroke-width="1" />
+    <circle cx="14" cy="14" r="5" fill="#34d399" />
+    <text x="28" y="18" fill="#a7f3d0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" letter-spacing="0.08em">AGRICULTURAL DEEP GENERATIVE VISION</text>
+
+    <!-- Main Title -->
+    <text x="0" y="78" fill="url(#accent-text)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="800" letter-spacing="-0.02em">
+      CVAE Plant Stress Detector
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="112" fill="#cbd5e1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="17" font-weight="400">
+      Conditional Variational Autoencoder for Abiotic Stress &amp; Anomaly Phenotyping
+    </text>
+
+    <!-- Mathematical Formula Bar -->
+    <g transform="translate(0, 140)">
+      <rect x="0" y="0" width="560" height="42" rx="8" fill="#0f172a" fill-opacity="0.8" stroke="#334155" stroke-width="1" />
+      <text x="16" y="26" fill="#94a3b8" font-family="'Courier New', Courier, monospace" font-size="13">
+        L_CVAE = E[log p_θ(x|z, y)] - D_KL(q_φ(z|x, y) || p(z|y))
+      </text>
+    </g>
+
+    <!-- Feature Tags -->
+    <g transform="translate(0, 204)">
+      <!-- Tag 1 -->
+      <rect x="0" y="0" width="120" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1" />
+      <text x="12" y="18" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="600">PyTorch 2.6+</text>
+      <!-- Tag 2 -->
+      <rect x="130" y="0" width="135" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1" />
+      <text x="142" y="18" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="600">CUDA Accelerated</text>
+      <!-- Tag 3 -->
+      <rect x="275" y="0" width="145" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1" />
+      <text x="287" y="18" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="600">Latent Manifold 50D</text>
+      <!-- Tag 4 -->
+      <rect x="430" y="0" width="130" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1" />
+      <text x="442" y="18" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="600">Zero-Setup DX</text>
+    </g>
+
+    <!-- Quick CTA / Handle -->
+    <g transform="translate(0, 252)">
+      <text x="0" y="18" fill="#64748b" font-family="sans-serif" font-size="12">Maintained by <tspan fill="#38bdf8" font-weight="600">Ravva-78</tspan> • MIT Open Source • Production Ready</text>
+    </g>
+  </g>
+
+  <!-- Right Visual Spec Cards (Glassmorphic Deck) -->
+  <g transform="translate(710, 50)" filter="url(#card-shadow)">
+    <!-- Top Big Metric Card -->
+    <rect x="0" y="0" width="430" height="150" rx="16" fill="url(#glass-card)" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="1.2" />
+    
+    <text x="24" y="34" fill="#94a3b8" font-family="sans-serif" font-size="11" font-weight="700" letter-spacing="0.08em">RECONSTRUCTION ANOMALY DETECTOR</text>
+    <text x="24" y="74" fill="#ffffff" font-family="sans-serif" font-size="28" font-weight="800">MSE Anomaly Threshold</text>
+    <text x="24" y="100" fill="#34d399" font-family="sans-serif" font-size="14" font-weight="600">τ = 0.014188 • Healthy &lt; τ ≤ Stressed</text>
+
+    <!-- Mini Progress / Distribution Bar -->
+    <rect x="24" y="118" width="382" height="8" rx="4" fill="#1e293b" />
+    <rect x="24" y="118" width="190" height="8" rx="4" fill="#10b981" />
+    <rect x="214" y="118" width="192" height="8" rx="4" fill="#ef4444" />
+    <line x1="214" y1="112" x2="214" y2="132" stroke="#ffffff" stroke-width="2.5" />
+
+    <!-- Bottom Left Card: Model Latency -->
+    <g transform="translate(0, 168)">
+      <rect x="0" y="0" width="205" height="110" rx="14" fill="url(#glass-card)" stroke="#334155" stroke-width="1" />
+      <text x="18" y="28" fill="#94a3b8" font-family="sans-serif" font-size="10" font-weight="700" letter-spacing="0.06em">INFERENCE SPEED</text>
+      <text x="18" y="62" fill="#38bdf8" font-family="sans-serif" font-size="24" font-weight="800">2.14 ms</text>
+      <text x="18" y="86" fill="#64748b" font-family="sans-serif" font-size="11">&gt; 460 FPS Single Leaf</text>
+    </g>
+
+    <!-- Bottom Right Card: Dataset Scale -->
+    <g transform="translate(225, 168)">
+      <rect x="0" y="0" width="205" height="110" rx="14" fill="url(#glass-card)" stroke="#334155" stroke-width="1" />
+      <text x="18" y="28" fill="#94a3b8" font-family="sans-serif" font-size="10" font-weight="700" letter-spacing="0.06em">TEST BENCHMARK</text>
+      <text x="18" y="62" fill="#a78bfa" font-family="sans-serif" font-size="24" font-weight="800">6,127</text>
+      <text x="18" y="86" fill="#64748b" font-family="sans-serif" font-size="11">AGMHS Hyperspectral</text>
+    </g>
+  </g>
+</svg>
